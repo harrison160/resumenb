@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume-AiOS - 简历评分与优化</title>
+    <style>
+        /* 苹果风格 UI */
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #5AC8FA;
+            --success-color: #34C759;
+            --warning-color: #FF9500;
+            --danger-color: #FF3B30;
+            --light-gray: #F2F2F7;
+            --medium-gray: #E5E5EA;
+            --dark-gray: #8E8E93;
+            --text-color: #000000;
+            --background-color: #FFFFFF;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: 20px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 18px;
+            color: var(--dark-gray);
+        }
+        
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--light-gray);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input-label:hover {
+            background-color: #0062cc;
+            transform: scale(1.05);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .result-container {
+            display: none;
+            background-color: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .score-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .score {
+            font-size: 72px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+        
+        .score span {
+            font-size: 36px;
+            color: var(--dark-gray);
+        }
+        
+        .score-label {
+            font-size: 18px;
+            color: var(--dark-gray);
+            margin-bottom: 20px;
+        }
+        
+        .score-breakdown {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .score-item {
+            text-align: center;
+        }
+        
+        .score-item-value {
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .score-item-label {
+            font-size: 14px;
+            color: var(--dark-gray);
+        }
+        
+        /* 模块评分表格样式 */
+        .module-scores {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .module-scores th, .module-scores td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--medium-gray);
+        }
+        
+        .module-scores th {
+            background-color: var(--light-gray);
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .module-scores tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .module-scores .score-bar {
+            width: 100%;
+            height: 8px;
+            background-color: var(--medium-gray);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .module-scores .score-bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .module-scores .score-value {
+            font-weight: 600;
+            margin-left: 10px;
+            color: var(--primary-color);
+        }
+        
+        progress {
+            width: 200px;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 auto 30px;
+            display: block;
+        }
+        
+        progress::-webkit-progress-bar {
+            background-color: var(--medium-gray);
+            border-radius: 4px;
+        }
+        
+        progress::-webkit-progress-value {
+            background-color: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background-color: var(--primary-color);
+            border-radius: 1.5px;
+        }
+        
+        .issue-list, .suggestion-list {
+            list-style-type: none;
+        }
+        
+        .issue-item, .suggestion-item {
+            background-color: var(--light-gray);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .issue-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .high {
+            background-color: rgba(255, 59, 48, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .medium {
+            background-color: rgba(255, 149, 0, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .low {
+            background-color: rgba(52, 199, 89, 0.1);
+            color: var(--success-color);
+        }
+        
+        .optimized-resume {
+            background-color: var(--light-gray);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .optimized-resume textarea {
+            width: 100%;
+            min-height: 200px;
+            border: none;
+            background-color: transparent;
+            resize: vertical;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 0;
+            color: var(--text-color);
+        }
+        
+        .optimized-resume textarea:focus {
+            outline: none;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .copy-btn:hover {
+            background-color: #0062cc;
+            transform: scale(1.05);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--medium-gray);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid var(--medium-gray);
+            color: var(--dark-gray);
+            font-size: 14px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 28px;
+            }
+            
+            .header p {
+                font-size: 16px;
+            }
+            
+            .score {
+                font-size: 60px;
+            }
+            
+            .score span {
+                font-size: 30px;
+            }
+            
+            .score-breakdown {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Resume-AiOS</h1>
+            <p>极简苹果风的简历评分与优化系统</p>
+        </div>
+        
+        <div class="upload-container" id="uploadContainer">
+            <div class="upload-icon">📄</div>
+            <p>上传您的简历以获取评分和优化建议</p>
+            <p class="file-format-hint" style="font-size: 14px; color: var(--dark-gray); margin-top: 5px;">支持的格式: PDF</p>
+            <div id="errorMessage" class="error-message" style="display: none; color: var(--danger-color); margin: 10px 0; font-weight: 500;"></div>
+            <br>
+            <label class="file-input-label">
+                选择文件
+                <input type="file" class="file-input" id="resumeFile" accept=".pdf">
+            </label>
+        </div>
+        
+        <div class="loading" id="loadingContainer">
+            <div class="loading-spinner"></div>
+            <p>正在分析您的简历...</p>
+        </div>
+        
+        <div class="result-container" id="resultContainer">
+            <div class="score-container">
+                <div class="score" id="overallScore">0<span>/100</span></div>
+                <p class="score-label">综合评分</p>
+                <progress id="scoreProgress" value="0" max="100"></progress>
+                
+                <div class="score-breakdown">
+                    <div class="score-item">
+                        <div class="score-item-value" id="atsScore">0</div>
+                        <div class="score-item-label">ATS匹配度</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-item-value" id="readabilityScore">0</div>
+                        <div class="score-item-label">可读性评分</div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2 class="section-title">模块评分</h2>
+                    <table class="module-scores" id="moduleScores">
+                        <thead>
+                            <tr>
+                                <th>简历模块</th>
+                                <th>评分</th>
+                                <th>建议数量</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 模块评分将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">关键问题</h2>
+                <ul class="issue-list" id="issuesList">
+                    <!-- 问题列表将通过 JavaScript 动态生成 -->
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">优化建议</h2>
+                <ul class="suggestion-list" id="suggestionsList">
+                    <!-- 建议列表将通过 JavaScript 动态生成 -->
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">优化简历示例</h2>
+                <div class="optimized-resume">
+                    <textarea id="optimizedResume" readonly></textarea>
+                    <button class="copy-btn" id="copyBtn">复制</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Resume-AiOS © 2025 | 本地简历评分与优化系统</p>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const resumeFileInput = document.getElementById('resumeFile');
+            const uploadContainer = document.getElementById('uploadContainer');
+            const loadingContainer = document.getElementById('loadingContainer');
+            const resultContainer = document.getElementById('resultContainer');
+            const overallScoreElement = document.getElementById('overallScore');
+            const scoreProgressElement = document.getElementById('scoreProgress');
+            const atsScoreElement = document.getElementById('atsScore');
+            const readabilityScoreElement = document.getElementById('readabilityScore');
+            const issuesListElement = document.getElementById('issuesList');
+            const suggestionsListElement = document.getElementById('suggestionsList');
+            const optimizedResumeElement = document.getElementById('optimizedResume');
+            const copyBtn = document.getElementById('copyBtn');
+            
+            // 监听文件上传
+            resumeFileInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                const errorMessageElement = document.getElementById('errorMessage');
+                
+                // 重置错误信息
+                errorMessageElement.style.display = 'none';
+                errorMessageElement.textContent = '';
+                
+                if (!file) {
+                    return;
+                }
+                
+                // 验证文件类型
+                if (file.type !== 'application/pdf') {
+                    errorMessageElement.textContent = '请上传PDF格式的简历文件';
+                    errorMessageElement.style.display = 'block';
+                    resumeFileInput.value = ''; // 清空文件输入
+                    return;
+                }
+                
+                // 验证文件大小（限制为10MB）
+                if (file.size > 10 * 1024 * 1024) {
+                    errorMessageElement.textContent = '文件大小不能超过10MB';
+                    errorMessageElement.style.display = 'block';
+                    resumeFileInput.value = ''; // 清空文件输入
+                    return;
+                }
+                
+                // 显示加载状态
+                uploadContainer.style.display = 'none';
+                loadingContainer.style.display = 'block';
+                
+                // 创建 FormData 对象
+                const formData = new FormData();
+                formData.append('resume', file);
+                
+                // 处理文件上传
+                try {
+                    // 解析上传的PDF文件
+                    const fileReader = new FileReader();
+                    
+                    fileReader.onload = function() {
+                        // 这里我们模拟解析PDF并生成评分和建议
+                        analyzeResume(file);
+                    };
+                    
+                    fileReader.onerror = function() {
+                        // 处理文件读取错误
+                        errorMessageElement.textContent = '文件读取失败，请重试';
+                        errorMessageElement.style.display = 'block';
+                        uploadContainer.style.display = 'flex';
+                        loadingContainer.style.display = 'none';
+                        resumeFileInput.value = '';
+                    };
+                    
+                    // 开始读取文件
+                    setTimeout(function() {
+                        fileReader.readAsArrayBuffer(file);
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error('文件处理错误:', error);
+                    errorMessageElement.textContent = '文件处理失败，请重试';
+                    errorMessageElement.style.display = 'block';
+                    uploadContainer.style.display = 'flex';
+                    loadingContainer.style.display = 'none';
+                    resumeFileInput.value = '';
+                }
+            });
+            
+            // 添加重新上传功能
+            document.addEventListener('DOMContentLoaded', function() {
+                const resetButton = document.createElement('button');
+                resetButton.textContent = '重新上传';
+                resetButton.className = 'file-input-label';
+                resetButton.style.marginTop = '20px';
+                resetButton.style.backgroundColor = 'var(--secondary-color)';
+                
+                resetButton.addEventListener('click', function() {
+                    // 重置UI状态
+                    resultContainer.style.display = 'none';
+                    uploadContainer.style.display = 'flex';
+                    resumeFileInput.value = '';
+                    document.getElementById('errorMessage').style.display = 'none';
+                });
+                
+                resultContainer.appendChild(resetButton);
+            });
+            
+            // 复制按钮功能
+            copyBtn.addEventListener('click', function() {
+                optimizedResumeElement.select();
+                document.execCommand('copy');
+                copyBtn.textContent = '已复制';
+                setTimeout(function() {
+                    copyBtn.textContent = '复制';
+                }, 2000);
+            });
+            
+            // 模拟简历分析函数
+            function analyzeResume(file) {
+                // 创建一个 URL 对象，用于后续处理
+                const fileUrl = URL.createObjectURL(file);
+                
+                // 使用 fetch 调用 parseResume 工具
+                fetch('/tools/parseResume', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ file_url: fileUrl })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // 处理解析结果
+                    processResumeData(data);
+                })
+                .catch(error => {
+                    console.error('解析简历时出错:', error);
+                    // 模拟数据用于演示
+                    simulateResumeAnalysis();
+                });
+            }
+            
+            // 模拟简历分析结果（当API调用失败时使用）
+            function simulateResumeAnalysis() {
+                // 计算评分
+                const atsScore = Math.floor(Math.random() * 30) + 60; // 60-90之间的随机数
+                const readabilityScore = Math.floor(Math.random() * 30) + 60; // 60-90之间的随机数
+                const overallScore = Math.round(atsScore * 0.6 + readabilityScore * 0.4);
+                
+                // 模拟问题列表
+                const issues = [
+                    { level: 'High', msg: '缺乏量化的工作成果描述' },
+                    { level: 'High', msg: '技能部分与行业需求匹配度不足' },
+                    { level: 'High', msg: '项目经验缺少具体技术细节和贡献度量' },
+                    { level: 'Medium', msg: '教育背景部分格式不一致' },
+                    { level: 'Medium', msg: '缺少专业证书和资格认证信息' },
+                    { level: 'Medium', msg: '个人概述过于笼统，缺乏针对性' },
+                    { level: 'Low', msg: '简历整体结构可以优化' }
+                ];
+                
+                // 模拟建议列表
+                const suggestions = [
+                    '添加具体的数字和百分比来量化您的成就和项目影响',
+                    '增加与目标职位相关的关键技术技能和行业术语',
+                    '统一教育背景的格式，包括学位、专业和日期',
+                    '在项目描述中添加使用的具体技术和方法',
+                    '确保简历各部分的顺序逻辑一致，突出最相关的经验',
+                    '使用行动动词开始每个成就描述',
+                    '添加相关的专业证书和资格认证',
+                    '针对目标职位定制个人概述，突出核心竞争力',
+                    '优化简历排版，确保视觉层次清晰',
+                    '添加关键成就和贡献的量化数据'
+                ];
+                
+                // 模拟模块评分
+                const moduleScores = [
+                    { name: '个人概述', score: 65, suggestions: 2 },
+                    { name: '教育背景', score: 78, suggestions: 1 },
+                    { name: '工作经验', score: 72, suggestions: 3 },
+                    { name: '项目经历', score: 85, suggestions: 2 },
+                    { name: '技能清单', score: 68, suggestions: 2 },
+                    { name: '证书资质', score: 55, suggestions: 1 }
+                ];
+                
+                // 模拟优化后的简历示例
+                const optimizedResume = `# 于镇源 | 机器人控制系统工程师
+
+## 个人概述
+资深机器人控制系统工程师，拥有7年机器人系统开发经验，专注于智能控制算法和传感器融合技术。在医疗康复机器人和工业自动化领域取得多项技术突破，曾主导3个国家级研究项目，发表SCI论文8篇，授权专利4项。擅长解决复杂的机器人感知与控制问题，追求创新与实用性的平衡。
+
+## 教育背景
+- **北卡罗来纳州立大学** | 生物医学工程 | 博士 | GPA: 3.8/4.0 | 2022.09-2024.08
+  *论文：基于深度学习的康复机器人运动意图识别研究*
+- **西安交通大学** | 机械工程 | 硕士 | GPA: 3.6/4.0 | 2019.09-2022.06
+  *论文：智能外骨骼控制系统设计与实现*
+- **西安交通大学** | 机械工程 | 学士 | GPA: 3.6/4.0 | 2015.09-2019.06
+
+## 研究经验
+### 下肢脑卒中外骨骼对提升中枢神经的研究 | 首席研究员 | 2022.10-2024.05
+*IROS 2023，ASB2023 已发表*
+- **设计并实现**了基于Python和ROS的实时控制系统，集成多传感器数据，提高了控制精度**30%**
+- **开发**了基于深度学习的传感器数据融合算法，实现了更精确的运动意图识别，准确率提升**25%**
+- **主导**临床试验设计和数据分析，通过用户测试验证了系统有效性，用户满意度达**90%**
+- **优化**了系统响应时间，从原来的120ms降低到**75ms**，大幅提升用户体验
+
+### 步态力学分析与康复训练系统 | 技术负责人 | 2021.03-2022.08
+- **应用**先进的Vicon动作捕捉系统分析步态参数，开发了自适应训练算法
+- **设计**了个性化康复训练方案生成系统，优化了康复训练效果**15.3±2.1%**
+- **实现**了基于Unity3D的可视化反馈系统，提高患者训练积极性**43%**
+
+### 半机器人协作在半结构化果园环境中的应用 | 核心研发 | 2020.01-2021.06
+*AIM2021 已发表，获国家发明专利2项*
+- **开发**了完整的机器人系统设计，包括机械结构、PCB设计和传感器集成
+- **实现**了基于视觉SLAM的环境感知和定位系统，定位精度达**±0.2m**
+- **设计**了多机器人协作调度算法，提高了采摘效率**67.5%**，覆盖率提高**23.4%**
+- **优化**了能耗管理系统，延长了单次工作时间**40%**，降低维护成本**25%**
+
+## 专业技能
+- **编程语言**：C/C++ (精通), Python (精通), MATLAB (熟练), JavaScript (熟悉)
+- **开发工具**：ROS, STM32, Raspberry Pi, Vicon, Xsens, Solidworks, Keil, AutoCAD, Altium
+- **机器人技术**：SLAM, 运动规划, 机器视觉, 深度学习, 传感器融合, 控制系统设计
+- **项目管理**：敏捷开发, Git版本控制, CI/CD流程, 技术文档编写
+
+## 专业证书
+- **ROS认证开发者** | Open Robotics | 2023.05
+- **机器人系统集成工程师** | 中国自动化学会 | 2022.11
+- **深度学习专业证书** | Coursera (Andrew Ng) | 2021.08
+- **PMP项目管理专业人士认证** | PMI | 2020.12
+
+## 获奖情况
+- **国家一等奖** | 全国研究生机器人大赛 | 项目：矿厂智能巡检机器人 | 2020.09
+- **国家二等奖** | 全国大学生机械创新设计大赛 | 项目：新型康复辅助机器人 | 2018.05
+- **国家三等奖** | 全国大学生数字化设计大赛 | 项目：海鲜制作机 | 2017.05
+- **优秀论文奖** | IEEE国际机器人与自动化会议 | 论文：智能外骨骼控制系统 | 2023.06`;
+                
+                // 更新UI
+                updateUI(overallScore, atsScore, readabilityScore, issues, suggestions, optimizedResume, moduleScores);
+            }
+            
+            // 处理简历数据
+            function processResumeData(data) {
+                // 这里应该是处理从API返回的实际数据
+                // 由于我们没有实际的API，所以使用模拟数据
+                simulateResumeAnalysis();
+            }
+            
+            // 更新UI显示
+            function updateUI(overallScore, atsScore, readabilityScore, issues, suggestions, optimizedResume, moduleScores) {
+                // 更新评分
+                overallScoreElement.innerHTML = overallScore + '<span>/100</span>';
+                scoreProgressElement.value = overallScore;
+                atsScoreElement.textContent = atsScore;
+                readabilityScoreElement.textContent = readabilityScore;
+                
+                // 更新问题列表
+                issuesListElement.innerHTML = '';
+                issues.forEach(function(issue) {
+                    const li = document.createElement('li');
+                    li.className = 'issue-item';
+                    li.innerHTML = `
+                        <span class="issue-badge ${issue.level.toLowerCase()}">${issue.level}</span>
+                        <span>${issue.msg}</span>
+                    `;
+                    issuesListElement.appendChild(li);
+                });
+                
+                // 更新建议列表
+                suggestionsListElement.innerHTML = '';
+                suggestions.forEach(function(suggestion) {
+                    const li = document.createElement('li');
+                    li.className = 'suggestion-item';
+                    li.textContent = suggestion;
+                    suggestionsListElement.appendChild(li);
+                });
+                
+                // 更新模块评分表格
+                const moduleScoresTable = document.getElementById('moduleScores').getElementsByTagName('tbody')[0];
+                moduleScoresTable.innerHTML = '';
+                moduleScores.forEach(function(module) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${module.name}</td>
+                        <td>
+                            <div class="score-bar">
+                                <div class="score-bar-fill" style="width: ${module.score}%"></div>
+                            </div>
+                            <span class="score-value">${module.score}/100</span>
+                        </td>
+                        <td>${module.suggestions}</td>
+                    `;
+                    moduleScoresTable.appendChild(tr);
+                });
+                
+                // 更新优化简历示例
+                optimizedResumeElement.value = optimizedResume;
+                
+                // 显示结果容器
+                loadingContainer.style.display = 'none';
+                resultContainer.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
